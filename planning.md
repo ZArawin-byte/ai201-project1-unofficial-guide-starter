@@ -40,15 +40,18 @@ Sources deliberately cover **different subtopics** (academics, food, housing, tr
 
 ## Chunking Strategy
 
-**Chunk size:** ~600 characters target (max 800), measured in characters.
-**Overlap:** 100 characters.
+**Chunk size:** 350-character target, 550-character hard cap, measured in characters.
+**Overlap:** 70 characters. Lone title/heading lines under 120 chars are merged into a neighbor so no chunk is a fragment.
+**Final chunk count:** 61 chunks across 12 documents (avg 337 chars, min 123, max 527).
+
+> *Updated during Milestone 3.* I first specced ~600/100 but the 12 documents are short (1.3–1.7k cleaned chars each) and that produced only 40 chunks — under the 50-chunk sanity floor and coarser than these tip-dense reviews warrant. I lowered the target to 350/70, which keeps one self-contained tip per chunk and yields 61.
 
 **Reasoning:**
-These documents are **mixed-structure**: forum threads made of discrete short replies (each reply is one self-contained tip) and wiki/blog guides made of medium paragraphs (each paragraph is one self-contained topic — "Northgate Commons is...", "Hillcrest Market is..."). The natural semantic unit in *both* is the paragraph/reply, so I chunk **paragraph-aware**: split on blank lines, then greedily pack whole paragraphs together until adding the next one would exceed ~600 characters.
+These documents are **mixed-structure**: forum threads made of discrete short replies (each reply is one self-contained tip) and wiki/blog guides made of medium paragraphs (each paragraph is one self-contained topic — "Northgate Commons is...", "Hillcrest Market is..."). The natural semantic unit in *both* is the paragraph/reply, so I chunk **paragraph-aware**: split on blank lines, then greedily pack whole paragraphs up to ~350 characters; a paragraph already near that size becomes its own chunk.
 
-- **Why ~600, not 200:** A single fact here is usually one full paragraph ("Hillcrest is grab-and-go, almost no wait, takes a meal swipe, closes 8 PM"). 200-char chunks would slice that into "Hillcrest is grab-and-go" / "takes a meal swipe" — fragments that match a query but can't answer it. ~600 chars keeps one complete tip intact.
-- **Why not 1500+:** Several docs cover many unrelated topics (the wellness FAQ has health center + CAPS + gym + pharmacy). One huge chunk per doc would blur four topics into one diluted embedding, so a query about "gym weekend hours" competes with pharmacy text in the same vector. Keeping chunks to one-or-two paragraphs preserves topical focus.
-- **Why 100-char overlap:** A fact occasionally straddles a paragraph break (a tip and its caveat). Overlap means a chunk boundary doesn't permanently sever the second half from the first.
+- **Why ~350, not 200:** A single tip is usually one full sentence-or-two ("Hillcrest is grab-and-go, almost no wait, takes a meal swipe, closes 8 PM"). 200-char chunks would slice that into "Hillcrest is grab-and-go" / "takes a meal swipe" — fragments that match a query but can't answer it. ~350 chars keeps one complete tip intact while staying review-sized.
+- **Why not 1500+:** Several docs cover many unrelated topics (the wellness FAQ has health center + CAPS + gym + pharmacy). One huge chunk per doc would blur four topics into one diluted embedding, so a query about "gym weekend hours" competes with pharmacy text in the same vector. Small chunks preserve topical focus.
+- **Why 70-char overlap:** A fact occasionally straddles a paragraph break (a tip and its caveat). Overlap means a chunk boundary doesn't permanently sever the second half from the first.
 - **How I'd know it's wrong:** too small → retrieved chunks are sentence fragments and distances cluster high (>0.6) because each embedding is low-signal. Too large → the right doc is retrieved but the answer's specific detail is buried among unrelated text and the LLM picks the wrong line.
 
 ---
